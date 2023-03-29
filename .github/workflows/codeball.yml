@@ -1,0 +1,64 @@
+import threading
+import time
+import playsound
+from termcolor import colored
+
+sonidos = {
+    "alarma1": "alarma1.wav",
+    "alarma2": "alarma2.wav",
+    "alarma3": "alarma3.wav",
+    "alarma4": "alarma4.wav",
+    "alarma5": "alarma5.wav"
+}
+
+def reproducir_sonido(sonido):
+    playsound.playsound(sonidos[sonido])
+
+def ejecutar_tarea(tarea):
+    print(colored(f"{tarea['tiempo']} - {tarea['actividad']}", "green"))
+    reproducir_sonido(tarea['sonido'])
+
+# Función para procesar la cola de tareas
+def procesar_cola(cola):
+    while True:
+        if not cola.empty():
+            tarea = cola.get()
+            ejecutar_tarea(tarea)
+            cola.task_done()
+
+# Función para agregar una tarea a la cola
+def agregar_tarea(cola, tiempo, actividad, sonido):
+    tarea = {
+        "tiempo": tiempo,
+        "actividad": actividad,
+        "sonido": sonido
+    }
+    cola.put(tarea)
+
+# Función para leer las alarmas desde un archivo de texto
+def leer_alarmas(archivo):
+    with open(archivo, 'r') as f:
+        lineas = f.readlines()
+    for linea in lineas:
+        datos = linea.strip().split(',')
+        tiempo = datos[0]
+        actividad = datos[1]
+        sonido = datos[2]
+        agregar_tarea(cola, tiempo, actividad, sonido)
+
+# Crear una cola de tareas
+cola = queue.Queue()
+
+# Leer las alarmas desde un archivo de texto
+leer_alarmas("alertas.txt")
+
+# Crear y ejecutar un hilo para procesar la cola de tareas
+hilo_cola = threading.Thread(target=procesar_cola, args=(cola,))
+hilo_cola.daemon = True
+hilo_cola.start()
+
+# Ejecutar la aplicación
+while True:
+    tiempo_actual = time.strftime("%H:%M:%S")
+    print(colored(tiempo_actual, "yellow"), end="\r")
+    time.sleep(1)
